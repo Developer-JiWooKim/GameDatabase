@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS Material(
+	materialId INTEGER PRIMARY KEY,
+	name TEXT NOT NULL UNIQUE,
+	price INTEGER NOT NULL CHECK ( price >= 0)
+);
