@@ -1,0 +1,2 @@
+DELETE FROM Item
+WHERE itemId = 1;
