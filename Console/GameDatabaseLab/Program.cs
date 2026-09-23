@@ -6,122 +6,93 @@ namespace GameDatabaseLab
   {
     private static void Main(string[] args)
     {
-      string connectionString = "Data Source=GameShop.db";
-      string createTableSql = @"
-          CREATE TABLE IF NOT EXISTS Player(
-            playerId INTEGER PRIMARY KEY,
-            name TEXT NOT NULL,
-            gold INTEGER NOT NULL CHECK (gold >= 0)
-          );
-          
-          CREATE TABLE IF NOT EXISTS Item(
-            itemId INTEGER PRIMARY KEY,
-            name TEXT NOT NULL,
-            price INTEGER NOT NULL CHECK (price > 0)
-          );
+      DatabaseManager.ResetData();
 
-          CREATE TABLE IF NOT EXISTS Inventory(
-            playerId INTEGER NOT NULL,
-            itemId INTEGER NOT NULL,
-            quantity INTEGER NOT NULL CHECK(quantity >= 0),
-            PRIMARY KEY(playerId, itemId),
-            FOREIGN KEY (playerId) REFERENCES Player(playerId),
-            FOREIGN KEY (itemId) REFERENCES Item(itemId)
-          );
-        ";
+      //PracticeBuyItemTransaction();
+      //PracticeFailBuyItemTransaction();
+      AppliedPracticeBuyItemTransaction();
+    }
 
-      using (SqliteConnection connection = new SqliteConnection(connectionString))
+    private static void PracticeBuyItemTransaction()
+    {
+      // DB 및 데이터 테이블 초기화
+      //DatabaseManager.InitializeDatabase();
+
+      ShopService shopService = new();
+
+      shopService.PrintPlayerInventory(playerId: 1);
+
+      Console.WriteLine("\n아이템(회복 포션) 구매 시도");
+      shopService.BuyItemTransaction(playerId: 1, itemId: 1, price: 30);
+
+      shopService.PrintPlayerInventory(playerId: 1);
+    }
+
+    private static void PracticeFailBuyItemTransaction()
+    {
+      ShopService shopService = new();
+
+      Console.WriteLine("----- 트랜잭션 롤백 테스트 시작 -----");
+
+      SetPlayerGold(playerId: 1, gold: 10);
+      Console.WriteLine("플레이어의 골드를 10으로 변경");
+
+      shopService.PrintPlayerInventory(playerId: 1);
+
+      Console.WriteLine("회복 포션(price:30) 구매 시도(골드 부족 상태)");
+      shopService.BuyItemTransaction(playerId: 1, itemId: 1, price: 30);
+
+      shopService.PrintPlayerInventory(playerId: 1);
+
+
+      SetPlayerGold(playerId: 1, gold: 100);
+      Console.WriteLine("플레이어 골드를 100으로 변경(복구)");
+
+      Console.WriteLine("회복 포션(price:30) 구매 시도");
+      shopService.BuyItemTransaction(playerId: 1, itemId: 1, price: 30);
+
+      shopService.PrintPlayerInventory(playerId: 1);
+
+    }
+
+    private static void AppliedPracticeBuyItemTransaction()
+    {
+      ShopService shopService = new();
+      Console.WriteLine("----- 응용 실습(구매 수량 입력) 테스트 시작 -----");
+
+      Console.WriteLine("\n회복 포션(price:30) 0개 구매 시도(잘못된 수량 입력 테스트: count <= 0)");
+      shopService.BuyItemTransaction(playerId: 1, itemId: 1, price: 30, count: 0);
+      shopService.PrintPlayerInventory(playerId: 1);
+
+      Console.WriteLine("\n회복 포션(price:30) 5개 구매 시도(골드 부족 테스트: 소지한 골드 초과 구매 시도)");
+      shopService.BuyItemTransaction(playerId: 1, itemId: 1, price: 30, count: 5);
+      shopService.PrintPlayerInventory(playerId: 1);
+
+      Console.WriteLine("\n회복 포션(price:30) 3개 구매 시도(정상 다량 구매 테스트)");
+      shopService.BuyItemTransaction(playerId: 1, itemId: 1, price: 30, count: 3);
+      shopService.PrintPlayerInventory(playerId: 1);
+
+    }
+
+    /// <summary>
+    /// 테스트용: Player의 gold를 특정 값으로 변경하는 메소드
+    /// </summary>
+    private static void SetPlayerGold(int playerId, int gold)
+    {
+      using (SqliteConnection connection = new(DatabaseManager.ConnectionString))
       {
         connection.Open();
-
-        using (SqliteCommand command = connection.CreateCommand())
+        using (SqliteCommand updateGold = connection.CreateCommand())
         {
-          command.CommandText = "PRAGMA foreign_keys = ON;";
-          command.ExecuteNonQuery();
-
-          // 실습 1 INSERT Player, Item Datas
-          // command.CommandText += createTableSql;
-          // command.CommandText += @"
-          //   INSERT OR IGNORE INTO Player (playerId, name, gold) 
-          //   VALUES (1, '민지', 100);
-
-          //   INSERT OR IGNORE INTO Item (itemId, name, price) 
-          //   VALUES (1, '회복 포션', 30);
-          // ";
-
-          // 실습 2 INSERT Item - 철 검
-          // command.CommandText += @"
-          //   INSERT OR IGNORE INTO Item (itemId, name, price)
-          //   VALUES ($itemId, $name, $price);          
-          // ";
-          // command.CommandText += @"
-          //   INSERT OR IGNORE INTO Inventory(playerId, itemId, quantity)
-          //   VALUES (1, 2, 1);
-          // ";
-
-          // command.Parameters.AddWithValue($"itemId", 2);
-          // command.Parameters.AddWithValue($"name", "철 검");
-          // command.Parameters.AddWithValue($"price", 100);
-
-          // int changedRows = command.ExecuteNonQuery();
-          // Console.WriteLine(changedRows + "건의 아이템을 등록했습니다.");
-
-          //실습 2 SELECT Inventory
-          command.CommandText = @"
-            SELECT Player.name
-            FROM Player
-            WHERE Player.playerId = 1;
+          updateGold.CommandText = @"
+              UPDATE Player
+              SET gold = $gold
+              WHERE playerId = $playerId;
           ";
-
-          command.Parameters.Clear();
-
-          using (SqliteDataReader reader = command.ExecuteReader())
-          {
-            if (reader.Read())
-            {
-              string playerName = reader.GetString(0);
-              Console.WriteLine(playerName);
-            }
-          }
-
-          command.CommandText = @"
-            SELECT Item.name, Inventory.Quantity
-            FROM Inventory
-            JOIN Item ON Inventory.itemId = Item.itemId
-            WHERE Inventory.playerId = $playerId;
-          ";
-
-          command.Parameters.Clear(); // 이전 파라미터 남아있을 수 있으니 초기화
-          command.Parameters.AddWithValue("$playerId", 1);
-          // command.ExecuteNonQuery();
-
-          using (SqliteDataReader reader = command.ExecuteReader())
-          {
-            Console.WriteLine("--- [ Inventory List ] ---");
-
-            while (reader.Read())
-            {
-              string itemName = reader.GetString(0);
-              int quantity = reader.GetInt32(1);
-
-              Console.WriteLine($"Item: {itemName} | Quantity: {quantity}");
-            }
-          }
-
-          // 실습 1 INSERT Inventory
-          // command.CommandText += @"
-          //   INSERT OR IGNORE INTO Inventory (playerId, itemId, quantity) 
-          //   VALUES ($playerId, $itemId, $quantity);
-          // ";
-
-          // command.Parameters.AddWithValue("$playerId", 1);
-          // command.Parameters.AddWithValue("$itemId", 1);
-          // command.Parameters.AddWithValue("$quantity", 5);
-
-          // command.ExecuteNonQuery();
+          updateGold.Parameters.AddWithValue("$gold", gold);
+          updateGold.Parameters.AddWithValue("$playerId", playerId);
+          updateGold.ExecuteNonQuery();
         }
-        // 실습 1
-        // Console.WriteLine("Database and tables created Succesfully.");
       }
     }
   }
