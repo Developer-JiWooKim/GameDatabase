@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "ewFA81zXDno=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Admin\\Documents\\GitHub\\GameDatabase\\Console\\GameNoSqlLab\\GameNoSqlLab.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Admin\\.nuget\\packages\\litedb\\5.0.21\\litedb.5.0.21.nupkg.sha512"
+  ],
+  "logs": []
+}
