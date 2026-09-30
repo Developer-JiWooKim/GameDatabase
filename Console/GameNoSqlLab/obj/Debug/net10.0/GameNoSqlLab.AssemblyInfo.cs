@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GameNoSqlLab")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+32e9451977a70a7218925f634394904c2f331ef4")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+46988ab73588d561da924ff93a97350b4e2ee3a3")]
 [assembly: System.Reflection.AssemblyProductAttribute("GameNoSqlLab")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GameNoSqlLab")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
